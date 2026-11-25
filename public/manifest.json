@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "PhonePe",
+  "short_name": "PhonePe",
+  "description": "PhonePe UPI payments, SIM recharge, banking, insurance, loans, and trading wallet.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#5F259F",
+  "background_color": "#2A0E4E",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/phonepe-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/phonepe-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/phonepe-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
