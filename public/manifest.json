@@ -5,7 +5,7 @@
   "description": "PhonePe UPI payments, SIM recharge, banking, insurance, loans, and trading wallet.",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "theme_color": "#5F259F",
   "background_color": "#2A0E4E",
