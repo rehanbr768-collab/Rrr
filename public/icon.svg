@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512">
+  <defs>
+    <linearGradient id="ppeBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#45137D" />
+      <stop offset="60%" stop-color="#5F259F" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="30" fill="url(#ppeBg)" />
+  <circle cx="32" cy="32" r="27" fill="none" stroke="#FFFFFF" stroke-opacity="0.22" stroke-width="1.5" />
+  <path d="M39.5 25 Q35.2 17 25.5 16.5" fill="none" stroke="#FFFFFF" stroke-width="4.8" stroke-linecap="round" />
+  <rect x="19" y="24" width="26" height="4.8" rx="2.4" fill="#FFFFFF" />
+  <rect x="37.5" y="24.5" width="5" height="23" rx="2.5" fill="#FFFFFF" />
+  <path d="M24 26.5 V34.5 C24 40 27.5 42.8 32.5 42.8 C35.8 42.8 38.2 41.2 39.8 39" fill="none" stroke="#FFFFFF" stroke-width="4.8" stroke-linecap="round" />
+</svg>

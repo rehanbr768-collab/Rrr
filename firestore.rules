@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidMobile(mobile) {
+      return mobile is string && mobile.size() == 10 && mobile.matches('^[0-9]{10}$');
+    }
+
+    function isValidBankId(bankId) {
+      return bankId in ['bank-hdfc', 'bank-sbi', 'bank-icici', 'bank-axis', 'bank-kotak', 'bank-pnb'];
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidWalletEntry(data, mobile) {
+      return data.keys().hasAll(['ownerUid', 'displayName', 'mobile', 'defaultBankId', 'updatedAt'])
+        && data.keys().hasOnly(['ownerUid', 'displayName', 'mobile', 'defaultBankId', 'updatedAt'])
+        && data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60
+        && data.mobile is string && data.mobile == mobile && isValidMobile(data.mobile)
+        && isValidBankId(data.defaultBankId)
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTransferBase(data, transferId) {
+      return data.id is string && data.id == transferId && isValidId(data.id)
+        && data.senderUid is string && data.senderUid.size() >= 1 && data.senderUid.size() <= 128
+        && data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 60
+        && isValidMobile(data.senderMobile)
+        && data.senderBankName is string && data.senderBankName.size() >= 1 && data.senderBankName.size() <= 60
+        && data.recipientUid is string && data.recipientUid.size() >= 1 && data.recipientUid.size() <= 128
+        && isValidMobile(data.recipientMobile)
+        && data.recipientName is string && data.recipientName.size() >= 1 && data.recipientName.size() <= 60
+        && isValidBankId(data.targetBankId)
+        && data.targetBankName is string && data.targetBankName.size() >= 1 && data.targetBankName.size() <= 60
+        && (data.amount is int || data.amount is float) && data.amount > 0 && data.amount <= 1000000
+        && data.note is string && data.note.size() <= 120
+        && data.createdAt is timestamp;
+    }
+
+    function isValidTransferCreate(data, transferId) {
+      return data.keys().hasAll([
+          'id', 'senderUid', 'senderName', 'senderMobile', 'senderBankName',
+          'recipientUid', 'recipientMobile', 'recipientName', 'targetBankId',
+          'targetBankName', 'amount', 'note', 'status', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'senderUid', 'senderName', 'senderMobile', 'senderBankName',
+          'recipientUid', 'recipientMobile', 'recipientName', 'targetBankId',
+          'targetBankName', 'amount', 'note', 'status', 'createdAt'
+        ])
+        && isValidTransferBase(data, transferId)
+        && data.status == 'pending';
+    }
+
+    function isValidTransferClaim(data, transferId) {
+      return data.keys().hasAll([
+          'id', 'senderUid', 'senderName', 'senderMobile', 'senderBankName',
+          'recipientUid', 'recipientMobile', 'recipientName', 'targetBankId',
+          'targetBankName', 'amount', 'note', 'status', 'createdAt',
+          'claimedAt', 'claimedByUid'
+        ])
+        && data.keys().hasOnly([
+          'id', 'senderUid', 'senderName', 'senderMobile', 'senderBankName',
+          'recipientUid', 'recipientMobile', 'recipientName', 'targetBankId',
+          'targetBankName', 'amount', 'note', 'status', 'createdAt',
+          'claimedAt', 'claimedByUid'
+        ])
+        && isValidTransferBase(data, transferId)
+        && data.status == 'claimed'
+        && data.claimedAt is timestamp
+        && data.claimedByUid is string && data.claimedByUid.size() >= 1 && data.claimedByUid.size() <= 128;
+    }
+
+    match /walletDirectory/{mobile} {
+      allow get: if isSignedIn() && isValidMobile(mobile);
+      allow list: if false;
+      allow create: if isVerifiedUser()
+        && isValidMobile(mobile)
+        && isValidWalletEntry(incoming(), mobile)
+        && incoming().ownerUid == request.auth.uid
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidMobile(mobile)
+        && isValidWalletEntry(incoming(), mobile)
+        && existing().ownerUid == request.auth.uid
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().mobile == existing().mobile
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'defaultBankId', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /transfers/{transferId} {
+      allow get: if isSignedIn()
+        && isValidId(transferId)
+        && (existing().senderUid == request.auth.uid || existing().recipientUid == request.auth.uid);
+      allow list: if isSignedIn()
+        && (resource.data.senderUid == request.auth.uid || resource.data.recipientUid == request.auth.uid);
+      allow create: if isVerifiedUser()
+        && isValidId(transferId)
+        && isValidTransferCreate(incoming(), transferId)
+        && incoming().senderUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/walletDirectory/$(incoming().recipientMobile))
+        && get(/databases/$(database)/documents/walletDirectory/$(incoming().recipientMobile)).data.ownerUid == incoming().recipientUid;
+      allow update: if isVerifiedUser()
+        && isValidId(transferId)
+        && isValidTransferClaim(incoming(), transferId)
+        && existing().status == 'pending'
+        && existing().recipientUid == request.auth.uid
+        && incoming().claimedByUid == request.auth.uid
+        && incoming().claimedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'claimedAt', 'claimedByUid'])
+        && incoming().id == existing().id
+        && incoming().senderUid == existing().senderUid
+        && incoming().senderName == existing().senderName
+        && incoming().senderMobile == existing().senderMobile
+        && incoming().senderBankName == existing().senderBankName
+        && incoming().recipientUid == existing().recipientUid
+        && incoming().recipientMobile == existing().recipientMobile
+        && incoming().recipientName == existing().recipientName
+        && incoming().targetBankId == existing().targetBankId
+        && incoming().targetBankName == existing().targetBankName
+        && incoming().amount == existing().amount
+        && incoming().note == existing().note
+        && incoming().createdAt == existing().createdAt;
+      allow delete: if false;
+    }
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "entities": {
+    "WalletDirectoryEntry": {
+      "title": "Wallet Directory Entry",
+      "description": "Maps a 10-digit mobile number to its owner Firebase UID, display name, and default receiving bank ID.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the wallet owner",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name shown to senders",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "mobile": {
+          "type": "string",
+          "description": "10-digit Indian mobile number",
+          "pattern": "^[0-9]{10}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "defaultBankId": {
+          "type": "string",
+          "description": "Default linked bank account ID",
+          "enum": ["bank-hdfc", "bank-sbi", "bank-icici", "bank-axis", "bank-kotak", "bank-pnb"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when directory entry was updated"
+        }
+      },
+      "required": ["ownerUid", "displayName", "mobile", "defaultBankId", "updatedAt"]
+    },
+    "PeerTransfer": {
+      "title": "Peer Transfer",
+      "description": "Cross-device PhonePe transfer targeting a specific recipient mobile number and one of 6 bank accounts.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique transfer ID",
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "senderUid": {
+          "type": "string",
+          "description": "Sender Firebase Auth UID",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Sender display name",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "senderMobile": {
+          "type": "string",
+          "description": "Sender 10-digit mobile number",
+          "pattern": "^[0-9]{10}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "senderBankName": {
+          "type": "string",
+          "description": "Sender debited bank name",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "recipientUid": {
+          "type": "string",
+          "description": "Recipient Firebase Auth UID",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "recipientMobile": {
+          "type": "string",
+          "description": "Recipient 10-digit mobile number",
+          "pattern": "^[0-9]{10}$",
+          "minLength": 10,
+          "maxLength": 10
+        },
+        "recipientName": {
+          "type": "string",
+          "description": "Recipient display name",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "targetBankId": {
+          "type": "string",
+          "description": "Target bank account ID among the 6 linked banks",
+          "enum": ["bank-hdfc", "bank-sbi", "bank-icici", "bank-axis", "bank-kotak", "bank-pnb"]
+        },
+        "targetBankName": {
+          "type": "string",
+          "description": "Target bank display name",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "amount": {
+          "type": "number",
+          "description": "Transfer amount in INR (> 0 and <= 1000000)"
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional transfer note",
+          "maxLength": 120
+        },
+        "status": {
+          "type": "string",
+          "description": "Transfer settlement status",
+          "enum": ["pending", "claimed"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of transfer creation"
+        },
+        "claimedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when recipient device claimed the funds"
+        },
+        "claimedByUid": {
+          "type": "string",
+          "description": "UID of recipient claiming the transfer",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "id",
+        "senderUid",
+        "senderName",
+        "senderMobile",
+        "senderBankName",
+        "recipientUid",
+        "recipientMobile",
+        "recipientName",
+        "targetBankId",
+        "targetBankName",
+        "amount",
+        "note",
+        "status",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/walletDirectory/{mobile}": {
+      "schema": { "$ref": "#/entities/WalletDirectoryEntry" },
+      "description": "Mobile number lookup for cross-device 6-bank PhonePe transfers (get-only, list disabled)."
+    },
+    "/transfers/{transferId}": {
+      "schema": { "$ref": "#/entities/PeerTransfer" },
+      "description": "Real-time cross-device UPI transfers settled into the recipient's selected bank account."
+    }
+  }
+}

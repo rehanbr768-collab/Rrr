@@ -1,0 +1,6 @@
+{
+  "name": "PayPulse Mobile Wallet UI",
+  "description": "PhonePe-style mobile payment and wallet UI layout built with React and Tailwind CSS.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
